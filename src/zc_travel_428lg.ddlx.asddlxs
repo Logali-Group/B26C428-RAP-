@@ -1,0 +1,79 @@
+@Metadata.layer: #CORE
+@UI: { 
+    headerInfo: { 
+        typeName: 'Travel',
+        typeNamePlural: 'Travels'
+    },
+    presentationVariant: [{ 
+        sortOrder: [{ by: 'TravelID', direction: #DESC  }],
+        visualizations: [{ type: #AS_LINEITEM }]
+    }]
+}
+annotate entity ZC_TRAVEL_428LG
+    with 
+{
+    @EndUserText.label: 'Travel UUID'
+    @UI.hidden: true
+    TravelUUID;
+    @EndUserText.label: 'Travel ID'
+    @UI: { 
+        lineItem: [{ position: 10 }]
+    }
+    TravelID;
+    @EndUserText.label: 'Agency ID'
+    @UI: { 
+        lineItem: [{ position: 20, label: 'Agency'  }],
+        selectionField: [{ position: 10 }],
+        textArrangement: #TEXT_ONLY
+    }
+    AgencyID;
+    @EndUserText.label: 'Customer ID'
+    @UI: { 
+        lineItem: [{ position: 30, label: 'Customer'  }],
+        selectionField: [{ position: 20 }],
+        textArrangement: #TEXT_ONLY
+    }
+    CustomerID;
+    @EndUserText.label: 'Begin Date'
+    @UI: { 
+        lineItem: [{ position: 40  }]
+    }
+    BeginDate;
+    @EndUserText.label: 'End Date'
+    @UI: { 
+        lineItem: [{ position: 50  }]
+    }
+    EndDate;
+    @EndUserText.label: 'Currency Code'
+    @UI: { 
+        selectionField: [{ position: 30 }]
+    }
+    CurrencyCode;
+    @EndUserText.label: 'Booking Fee'
+    @UI: { 
+        lineItem: [{ position: 60  }]
+    }
+    BookingFee;
+    @EndUserText.label: 'Total Price'
+    @UI: { 
+        lineItem: [{ position: 70  }]
+    }
+    TotalPrice;
+    @EndUserText.label: 'Description'
+    Description;
+    @EndUserText.label: 'Overall Status'
+    @UI: { 
+        lineItem: [{ 
+                    position: 80, 
+                    cssDefault.width: '10rem', 
+                    criticality: 'OverallStatusCriticality' 
+        }],
+        selectionField: [{ position: 40 }],
+        textArrangement: #TEXT_ONLY
+    }
+    OverallStatus;
+    @UI.hidden: true
+    LocalLastChangedAt;
+    @UI.hidden: true
+    LastChangedAt;
+}
