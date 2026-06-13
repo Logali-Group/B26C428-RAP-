@@ -1,0 +1,29 @@
+projection;
+strict ( 2 );
+
+define behavior for ZC_TRAVEL_428LG alias Travel
+{
+  use create;
+  use update;
+  use delete;
+
+  use association _Booking { create; }
+}
+
+define behavior for ZC_BOOKING_428LG alias Booking
+{
+  use update;
+  use delete;
+
+  use association _Travel;
+  use association _BookingSupplement { create; }
+}
+
+define behavior for ZC_BSUPPL_428LG alias BookingSupplement
+{
+  use update;
+  use delete;
+
+  use association _Travel;
+  use association _Booking;
+}

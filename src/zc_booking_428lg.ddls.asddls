@@ -8,14 +8,22 @@ define view entity ZC_BOOKING_428LG as projection on ZI_BOOKING_428LG
     TravelUUID,
     BookingID,
     BookingDate,
+    @ObjectModel.text.element: [ 'CustomerName' ]
     CustomerID,
+    CustomerName,
+    @ObjectModel.text.element: [ 'AirlineName' ]
     AirlineID,
+    AirlineName,
+    @ObjectModel.text.element: [ 'ConnectionRoute' ]
     ConnectionID,
+    ConnectionRoute,
     FlightDate,
     CurrencyCode,
     @Semantics.amount.currencyCode: 'CurrencyCode'
     FlightPrice,
+    @ObjectModel.text.element: [ 'BookingStatusText' ]
     BookingStatus,
+    _BookingStatus._Text.Text as BookingStatusText : localized,
     @Semantics.systemDateTime.localInstanceLastChangedAt: true
     LocalLastChangedAt,
     /* Associations */

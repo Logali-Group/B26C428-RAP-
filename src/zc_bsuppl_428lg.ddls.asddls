@@ -8,7 +8,9 @@ define view entity ZC_BSUPPL_428LG as projection on ZI_BSUPPL_428LG
     TravelUUID,
     BookingUUID,
     BookingSupplementID,
+    @ObjectModel.text.element: [ 'SupplementDescription' ]
     SupplementID,
+    _SupplementText.Description as SupplementDescription : localized,
     CurrencyCode,
     @Semantics.amount.currencyCode: 'CurrencyCode'
     Price,

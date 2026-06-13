@@ -15,18 +15,27 @@ define root view entity ZC_TRAVEL_428LG
     AgencyID,
     AgencyName,
     @ObjectModel.text.element: [ 'CustomerName' ]
-    CustomerID,
+    @Consumption.valueHelpDefinition: [{ 
+        entity: { name: '/DMO/I_Customer', element: 'CustomerID' }
+    }]
+    CustomerID, // <-- Here
     CustomerName,
     BeginDate,
     EndDate,
-    CurrencyCode,
+    @Consumption.valueHelpDefinition: [{  
+        entity: { name: 'I_Currency', element: 'Currency' } 
+    }]
+    CurrencyCode, //< --
     @Semantics.amount.currencyCode: 'CurrencyCode'
     BookingFee,
     @Semantics.amount.currencyCode: 'CurrencyCode'
     TotalPrice,
     Description,
     @ObjectModel.text.element: [ 'OverallStatusText' ]
-    OverallStatus,
+    @Consumption.valueHelpDefinition: [{  
+        entity: { name: '/DMO/I_Overall_Status_VH', element: 'OverallStatus' }
+    }]
+    OverallStatus, //<-- O A X
     _OverallStatus._Text.Text as OverallStatusText : localized,
     OverallStatusCriticality,
     @Semantics.systemDateTime.localInstanceLastChangedAt: true

@@ -18,8 +18,11 @@ define view entity ZI_BOOKING_428LG
       booking_id            as BookingID,
       booking_date          as BookingDate,
       customer_id           as CustomerID,
+      concat_with_space(_Customer.FirstName, _Customer.LastName, 1) as CustomerName,
       carrier_id            as AirlineID,
+      _Carrier.Name as AirlineName, 
       connection_id         as ConnectionID,
+      concat_with_space(_Connection.DepartureAirport, _Connection.DestinationAirport, 1) as ConnectionRoute,
       flight_date           as FlightDate,
       currency_code         as CurrencyCode,
       @Semantics.amount.currencyCode: 'CurrencyCode'
