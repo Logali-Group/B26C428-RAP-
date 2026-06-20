@@ -1,10 +1,12 @@
 managed;
 strict ( 2 );
+with draft;
 
 define behavior for ZI_TRAVEL_428LG alias Travel
 implementation in class zbp_i_travel_428lg unique
 persistent table ztravel_428lg
-lock master
+draft table ztravel_428lg_d
+lock master total etag LastChangedAt
 authorization master ( instance )
 etag master LocalLastChangedAt
 
@@ -25,7 +27,19 @@ etag master LocalLastChangedAt
   CustomerName,
   OverallStatusCriticality;
 
-  association _Booking { create; }
+  determination setTravelNumber on save { create; }
+  determination setInitialValue on modify { create; }
+
+  action acceptTravel result [1] $self;
+  action rejectTravel result [1] $self;
+
+  association _Booking { create; with draft; }
+
+  draft action Resume;
+  draft action Edit;
+  draft action Activate optimized;
+  draft action Discard;
+  draft determine action Prepare;
 
   mapping for ztravel_428lg
     {
@@ -51,6 +65,7 @@ etag master LocalLastChangedAt
 define behavior for ZI_BOOKING_428LG alias Booking
 implementation in class zbp_i_booking_428lg unique
 persistent table zbooking_428lg
+draft table zbooking_428lg_d
 lock dependent by _Travel
 authorization dependent by _Travel
 etag master LocalLastChangedAt
@@ -62,8 +77,8 @@ etag master LocalLastChangedAt
   field ( readonly, numbering : managed ) BookingUUID;
   field ( readonly ) TravelUUID, BookingID, LocalLastChangedAt;
 
-  association _Travel;
-  association _BookingSupplement { create; }
+  association _Travel { with draft;}
+  association _BookingSupplement { create; with draft;}
 
   mapping for zbooking_428lg {
       BookingUUID        = booking_uuid;
@@ -84,6 +99,7 @@ etag master LocalLastChangedAt
 define behavior for ZI_BSUPPL_428LG alias BookingSupplement
 implementation in class zbp_i_bsuppl_428lg unique
 persistent table zbsuppl_428lg
+draft table zbsuppl_428lg_d
 lock dependent by _Travel
 authorization dependent by _Travel
 etag master LocalLastChangedAt
@@ -105,6 +121,6 @@ etag master LocalLastChangedAt
       LocalLastChangedAt  = local_last_changed_at;
   }
 
-  association _Travel;
-  association _Booking;
+  association _Travel { with draft;}
+  association _Booking { with draft;}
 }

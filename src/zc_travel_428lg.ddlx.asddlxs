@@ -84,8 +84,16 @@ annotate entity ZC_TRAVEL_428LG
     TravelUUID;
     @EndUserText.label: 'Travel ID'
     @UI: { 
-        lineItem: [{ position: 10 }],
-        identification: [{ position: 10 }]
+        lineItem: [
+            { position: 10 },
+            { type: #FOR_ACTION, dataAction: 'acceptTravel', label: 'Accept Travel' },
+            { type: #FOR_ACTION, dataAction: 'rejectTravel', label: 'Reject Travel'}
+        ],
+        identification: [
+            { position: 10 },
+            { type: #FOR_ACTION, dataAction: 'acceptTravel', label: 'Accept Travel' },
+            { type: #FOR_ACTION, dataAction: 'rejectTravel', label: 'Reject Travel'}
+        ]
     }
     TravelID;
     @EndUserText.label: 'Agency ID'
@@ -135,7 +143,8 @@ annotate entity ZC_TRAVEL_428LG
     TotalPrice;
     @EndUserText.label: 'Description'
     @UI: { 
-        identification: [{ position: 20  }]
+        identification: [{ position: 20  }],
+        multiLineText: true
     }
     Description;
     @EndUserText.label: 'Overall Status'
