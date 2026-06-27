@@ -1,6 +1,7 @@
 projection;
 strict ( 2 );
 use draft;
+use side effects;
 
 define behavior for ZC_TRAVEL_428LG alias Travel
 {
@@ -16,6 +17,11 @@ define behavior for ZC_TRAVEL_428LG alias Travel
 
   use action acceptTravel;
   use action rejectTravel;
+
+  use action validateAgencyID;
+  use action validateCustomerID;
+  use action validateDateRange;
+  use action validateBookingFeeValue;
 
   use association _Booking { create; with draft; }
 }

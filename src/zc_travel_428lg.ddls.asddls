@@ -23,7 +23,11 @@ define root view entity ZC_TRAVEL_428LG
     BeginDate,
     EndDate,
     @Consumption.valueHelpDefinition: [{  
-        entity: { name: 'I_Currency', element: 'Currency' } 
+        entity: { 
+            name: 'I_Currency', 
+            element: 'Currency'
+        }, 
+        useForValidation: true
     }]
     CurrencyCode, //< --
     @Semantics.amount.currencyCode: 'CurrencyCode'

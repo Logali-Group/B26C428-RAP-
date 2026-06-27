@@ -7,6 +7,9 @@ CLASS lhc_Travel DEFINITION INHERITING FROM cl_abap_behavior_handler.
     METHODS get_global_authorizations FOR GLOBAL AUTHORIZATION
       IMPORTING REQUEST requested_authorizations FOR Travel RESULT result.
 
+    METHODS get_features FOR INSTANCE FEATURES
+        IMPORTING keys REQUEST requested_features FOR Travel RESULT result.
+
     METHODS setTravelNumber FOR DETERMINE ON SAVE
       IMPORTING keys FOR Travel~setTravelNumber.
 
@@ -18,6 +21,18 @@ CLASS lhc_Travel DEFINITION INHERITING FROM cl_abap_behavior_handler.
 
     METHODS rejectTravel FOR MODIFY
       IMPORTING keys FOR ACTION Travel~rejectTravel RESULT result.
+
+    METHODS validateAgency FOR VALIDATE ON SAVE
+      IMPORTING keys FOR Travel~validateAgency.
+
+    METHODS validateCustomer FOR VALIDATE ON SAVE
+      IMPORTING keys FOR Travel~validateCustomer.
+
+    METHODS validateDates FOR VALIDATE ON SAVE
+      IMPORTING keys FOR Travel~validateDates.
+
+    METHODS validateBookingFee FOR VALIDATE ON SAVE
+      IMPORTING keys FOR Travel~validateBookingFee.
 
    CONSTANTS:
         BEGIN OF travel_status,
@@ -41,6 +56,37 @@ CLASS lhc_Travel IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD get_global_authorizations.
+  ENDMETHOD.
+
+  METHOD get_features.
+
+    READ ENTITIES OF ZI_TRAVEL_428LG IN LOCAL MODE
+        ENTITY Travel
+        FIELDS ( OverallStatus )
+        WITH CORRESPONDING #( keys )
+        RESULT DATA(travels)
+        FAILED failed.
+
+    result = VALUE #( FOR travel in travels (
+        %tky  = travel-%tky
+        %field-BookingFee = COND #( WHEN travel-OverallStatus = travel_status-accepted
+                                    THEN if_abap_behv=>fc-f-read_only
+                                    ELSE if_abap_behv=>fc-f-unrestricted
+        )
+        %action-acceptTravel = COND #( WHEN travel-OverallStatus = travel_status-accepted
+                                       THEN if_abap_behv=>fc-o-disabled
+                                       ELSE   if_abap_behv=>fc-o-enabled
+        )
+        %action-rejectTravel = COND #( WHEN travel-OverallStatus = travel_status-rejected
+                                       THEN if_abap_behv=>fc-o-disabled
+                                       ELSE   if_abap_behv=>fc-o-enabled
+        )
+        %assoc-_Booking = COND #(   WHEN travel-OverallStatus = travel_status-rejected
+                                    THEN if_abap_behv=>fc-o-disabled
+                                    ELSE if_abap_behv=>fc-o-enabled
+         )
+    ) ).
+
   ENDMETHOD.
 
   METHOD setTravelNumber.
@@ -148,5 +194,223 @@ CLASS lhc_Travel IMPLEMENTATION.
    ) ).
 
   ENDMETHOD.
+
+  METHOD validateAgency.
+
+    READ ENTITIES OF ZI_TRAVEL_428LG IN LOCAL MODE
+        ENTITY Travel
+        FIELDS ( AgencyID )
+        WITH CORRESPONDING #( keys )
+        RESULT DATA(travels).
+
+   DATA agencies TYPE SORTED TABLE OF /dmo/agency WITH UNIQUE KEY agency_id.
+   agencies = CORRESPONDING #( travels DISCARDING DUPLICATES MAPPING agency_id = AgencyID EXCEPT * ).
+   DELETE agencies WHERE agency_id IS INITIAL.
+
+   IF agencies IS NOT INITIAL.
+    SELECT FROM /dmo/agency FIELDS agency_id
+        FOR ALL ENTRIES IN @agencies
+        WHERE agency_id = @agencies-agency_id
+        INTO TABLE @DATA(valid_agencies).
+   ENDIF.
+
+   LOOP AT travels INTO DATA(travel).
+
+        APPEND VALUE #( %tky = travel-%tky
+                        %state_area = 'VALIDATE_AGENCY'
+        ) to reported-travel.
+
+        IF travel-AgencyID IS INITIAL.
+
+            APPEND VALUE #( %tky = travel-%tky ) to failed-travel.
+
+            APPEND VALUE #( %tky = travel-%tky
+                            %state_area = 'VALIDATE_AGENCY'
+                            %msg = new /dmo/cm_flight_messages(
+                                textid = /dmo/cm_flight_messages=>enter_agency_id
+                                severity = if_abap_behv_message=>severity-error
+                            )
+                            %element-AgencyID = if_abap_behv=>mk-on
+            ) to reported-travel.
+
+        ELSEIF NOT line_exists( valid_agencies[ agency_id = travel-AgencyID ] ).
+
+            APPEND VALUE #( %tky = travel-%tky ) to failed-travel.
+
+            APPEND VALUE #( %tky = travel-%tky
+                            %state_area = 'VALIDATE_AGENCY'
+                            %msg = new /dmo/cm_flight_messages(
+                                agency_id = travel-AgencyID
+                                textid = /dmo/cm_flight_messages=>agency_unkown
+                                severity = if_abap_behv_message=>severity-error
+                            )
+                            %element-AgencyID = if_abap_behv=>mk-on
+            ) to reported-travel.
+
+        ENDIF.
+
+   ENDLOOP.
+
+  ENDMETHOD.
+
+  METHOD validateCustomer.
+
+    READ ENTITIES OF ZI_TRAVEL_428LG IN LOCAL MODE
+        ENTITY Travel
+        FIELDS ( CustomerID )
+        WITH CORRESPONDING #( keys )
+        RESULT DATA(travels).
+
+    DATA customers TYPE SORTED TABLE OF /dmo/customer WITH UNIQUE KEY customer_id.
+    customers = CORRESPONDING #( travels DISCARDING DUPLICATES MAPPING customer_id = CustomerID EXCEPT * ).
+    DELETE customers WHERE customer_id IS INITIAL.
+
+    IF customers IS NOT INITIAL.
+        SELECT FROM /dmo/customer FIELDS customer_id
+        FOR ALL ENTRIES IN @customers
+            WHERE customer_id = @customers-customer_id
+            INTO TABLE @DATA(valid_customers).
+    ENDIF.
+
+    LOOP AT travels INTO DATA(travel).
+
+         APPEND VALUE #( %tky = travel-%tky
+                        %state_area = 'VALIDATE_CUSTOMER'
+         ) TO reported-travel.
+
+
+         IF travel-CustomerID IS INITIAL.
+
+             APPEND VALUE #( %tky = travel-%tky ) TO failed-travel.
+
+             APPEND VALUE #( %tky = travel-%tky
+                            %state_area = 'VALIDATE_CUSTOMER'
+                            %msg = new /dmo/cm_flight_messages(
+                                textid = /dmo/cm_flight_messages=>enter_customer_id
+                                severity = if_abap_behv_message=>severity-error
+                            )
+                            %element-CustomerID = if_abap_behv=>mk-on
+             ) to reported-travel.
+
+         ELSEIF NOT line_exists( valid_customers[ customer_id = travel-CustomerID ] ).
+
+             APPEND VALUE #( %tky = travel-%tky ) TO failed-travel.
+
+             APPEND VALUE #( %tky = travel-%tky
+                            %state_area = 'VALIDATE_CUSTOMER'
+                            %msg = new /dmo/cm_flight_messages(
+                                customer_id = travel-CustomerID
+                                textid = /dmo/cm_flight_messages=>customer_unkown
+                                severity = if_abap_behv_message=>severity-error
+                            )
+                            %element-CustomerID = if_abap_behv=>mk-on
+             ) to reported-travel.
+
+         ENDIF.
+
+    ENDLOOP.
+
+
+  ENDMETHOD.
+
+  METHOD validateDates.
+
+  READ ENTITIES OF ZI_TRAVEL_428LG IN LOCAL MODE
+    ENTITY Travel
+      FIELDS ( BeginDate EndDate )
+      WITH CORRESPONDING #( keys )
+    RESULT DATA(travels).
+
+  LOOP AT travels INTO DATA(travel).
+
+    " Limpia mensajes previos de ESTA validación
+    APPEND VALUE #( %tky        = travel-%tky
+                    %state_area = 'VALIDATE_DATES' ) TO reported-travel.
+
+    " a) fecha de inicio vacía
+    IF travel-BeginDate IS INITIAL.
+      APPEND VALUE #( %tky = travel-%tky ) TO failed-travel.
+      APPEND VALUE #( %tky               = travel-%tky
+                      %state_area        = 'VALIDATE_DATES'
+                      %msg               = NEW /dmo/cm_flight_messages(
+                                                textid   = /dmo/cm_flight_messages=>enter_begin_date
+                                                severity = if_abap_behv_message=>severity-error )
+                      %element-BeginDate = if_abap_behv=>mk-on ) TO reported-travel.
+    ENDIF.
+
+    " b) fecha fin vacía
+    IF travel-EndDate IS INITIAL.
+      APPEND VALUE #( %tky = travel-%tky ) TO failed-travel.
+      APPEND VALUE #( %tky             = travel-%tky
+                      %state_area      = 'VALIDATE_DATES'
+                      %msg             = NEW /dmo/cm_flight_messages(
+                                              textid   = /dmo/cm_flight_messages=>enter_end_date
+                                              severity = if_abap_behv_message=>severity-error )
+                      %element-EndDate = if_abap_behv=>mk-on ) TO reported-travel.
+    ENDIF.
+
+    " c) fin anterior a inicio
+    IF travel-BeginDate IS NOT INITIAL AND travel-EndDate IS NOT INITIAL
+                                       AND travel-EndDate < travel-BeginDate.
+      APPEND VALUE #( %tky = travel-%tky ) TO failed-travel.
+      APPEND VALUE #( %tky               = travel-%tky
+                      %state_area        = 'VALIDATE_DATES'
+                      %msg               = NEW /dmo/cm_flight_messages(
+                                                textid     = /dmo/cm_flight_messages=>begin_date_bef_end_date
+                                                begin_date = travel-BeginDate
+                                                end_date   = travel-EndDate
+                                                severity   = if_abap_behv_message=>severity-error )
+                      %element-BeginDate = if_abap_behv=>mk-on
+                      %element-EndDate   = if_abap_behv=>mk-on ) TO reported-travel.
+    ENDIF.
+
+    " d) inicio en el pasado
+    IF travel-BeginDate IS NOT INITIAL AND travel-BeginDate < cl_abap_context_info=>get_system_date( ).
+      APPEND VALUE #( %tky = travel-%tky ) TO failed-travel.
+      APPEND VALUE #( %tky               = travel-%tky
+                      %state_area        = 'VALIDATE_DATES'
+                      %msg               = NEW /dmo/cm_flight_messages(
+                                                textid     = /dmo/cm_flight_messages=>begin_date_on_or_bef_sysdate
+                                                begin_date = travel-BeginDate
+                                                severity   = if_abap_behv_message=>severity-error )
+                      %element-BeginDate = if_abap_behv=>mk-on ) TO reported-travel.
+    ENDIF.
+
+  ENDLOOP.
+
+
+  ENDMETHOD.
+
+  METHOD validateBookingFee.
+
+      READ ENTITIES OF ZI_TRAVEL_428LG IN LOCAL MODE
+        ENTITY Travel
+          FIELDS ( BookingFee )
+          WITH CORRESPONDING #( keys )
+        RESULT DATA(travels).
+
+      LOOP AT travels INTO DATA(travel).
+
+        APPEND VALUE #( %tky        = travel-%tky
+                        %state_area = 'VALIDATE_BOOKINGFEE' ) TO reported-travel.
+
+        IF travel-BookingFee < 0.
+
+          APPEND VALUE #( %tky = travel-%tky ) TO failed-travel.
+
+          APPEND VALUE #( %tky                = travel-%tky
+                          %state_area         = 'VALIDATE_BOOKINGFEE'
+                          %msg                = NEW /dmo/cm_flight_messages(
+                                                     textid   = /dmo/cm_flight_messages=>booking_fee_invalid
+                                                     severity = if_abap_behv_message=>severity-error )
+                          %element-BookingFee = if_abap_behv=>mk-on ) TO reported-travel.
+
+        ENDIF.
+
+      ENDLOOP.
+
+
+  ENDMETHOD.
+
 
 ENDCLASS.

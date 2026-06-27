@@ -27,13 +27,35 @@ etag master LocalLastChangedAt
   CustomerName,
   OverallStatusCriticality;
 
+  field ( features : instance ) BookingFee;
+
   determination setTravelNumber on save { create; }
   determination setInitialValue on modify { create; }
 
-  action acceptTravel result [1] $self;
-  action rejectTravel result [1] $self;
+  action ( features : instance ) acceptTravel result [1] $self;
+  action ( features : instance ) rejectTravel result [1] $self;
 
-  association _Booking { create; with draft; }
+  validation validateAgency on save { create; field AgencyID; }
+  determine action validateAgencyID { validation validateAgency; }
+
+  validation validateCustomer on save { create; field CustomerID; }
+  determine action validateCustomerID { validation validateCustomer; }
+
+  validation validateDates on save { create; field BeginDate, EndDate; }
+  determine action validateDateRange { validation validateDates; }
+
+  validation validateBookingFee on save { create; field BookingFee; }
+  determine action validateBookingFeeValue { validation validateBookingFee; }
+
+  side effects {
+    determine action validateAgencyID executed on field AgencyID affects messages;
+    determine action validateCustomerID executed on field CustomerID affects messages;
+    determine action validateDateRange executed on field BeginDate, field EndDate affects messages;
+    determine action validateBookingFeeValue executed on field BookingFee affects messages;
+  }
+
+
+  association _Booking { create (features : instance); with draft; }
 
   draft action Resume;
   draft action Edit;
